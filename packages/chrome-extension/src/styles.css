@@ -314,3 +314,18 @@
   }
 }
 
+
+.mcp-pointer__overlay-index {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  background: rgba(0, 200, 255, 0.9);
+  color: white;
+  font-size: 12px;
+  font-weight: bold;
+  padding: 2px 6px;
+  border-radius: 10px;
+  z-index: 1;
+  pointer-events: none;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}

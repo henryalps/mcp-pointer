@@ -38,9 +38,9 @@ ConfigStorageService.onChange((newConfig: ExtensionConfig) => {
 chrome.runtime.onMessage
   .addListener((request: any, _sender: any, sendResponse: (response: any) => void) => {
     if (request.type === 'ELEMENT_SELECTED' && request.data) {
-      // Send element with current port and status callback
-      elementSender.sendElement(
-        request.data,
+      // Send elements with current port and status callback
+      elementSender.sendElements(
+        Array.isArray(request.data) ? request.data : [request.data],
         currentConfig.websocket.port,
         (status, error) => {
           // Status flow: CONNECTING -> CONNECTED -> SENDING -> SENT
@@ -52,10 +52,10 @@ chrome.runtime.onMessage
               logger.info('✅ Connected');
               break;
             case ConnectionStatus.SENDING:
-              logger.info('📤 Sending element...');
+              logger.info('📤 Sending elements...');
               break;
             case ConnectionStatus.SENT:
-              logger.info('✓ Element sent successfully');
+              logger.info('✓ Elements sent successfully');
               break;
             case ConnectionStatus.ERROR:
               logger.error('❌ Failed:', error);

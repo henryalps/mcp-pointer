@@ -25,8 +25,8 @@ export class ElementSenderService {
 
   private readonly MAX_RETRIES = 10; // Maximum connection retry attempts
 
-  async sendElement(
-    element: TargetedElement,
+  async sendElements(
+    elements: TargetedElement[],
     port: number,
     statusCallback?: StatusCallback,
   ): Promise<void> {
@@ -41,22 +41,22 @@ export class ElementSenderService {
       // Start idle timer just before sending
       this.startIdleTimer();
 
-      // Now sending the element
+      // Now sending the elements
       statusCallback?.(ConnectionStatus.SENDING);
 
       const message: PointerMessage = {
         type: PointerMessageType.ELEMENT_SELECTED,
-        data: element,
+        data: elements,
         timestamp: Date.now(),
       };
 
       this.ws!.send(JSON.stringify(message));
-      logger.info('📤 Element sent:', element);
+      logger.info('📤 Elements sent:', elements);
 
       // Successfully sent
       statusCallback?.(ConnectionStatus.SENT);
     } catch (error) {
-      logger.error('Failed to send element:', error);
+      logger.error('Failed to send elements:', error);
       statusCallback?.(ConnectionStatus.ERROR, (error as Error).message);
     }
   }

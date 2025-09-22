@@ -18,7 +18,7 @@ export default class ElementPointerService {
 
   private hoveredElement: HTMLElement | null = null;
 
-  private pointedElement: HTMLElement | null = null;
+  private selectedElements: HTMLElement[] = [];
 
   constructor() {
     this.triggerKeyService = new TriggerKeyService({
@@ -35,7 +35,7 @@ export default class ElementPointerService {
   private onHover(target: HTMLElement): void {
     if (this.hoveredElement === target) return;
 
-    if (this.pointedElement === target) {
+    if (this.selectedElements.includes(target)) {
       this.overlayManagerService.clearOverlay(OverlayType.HOVER);
       this.hoveredElement = null;
     } else {
@@ -47,20 +47,22 @@ export default class ElementPointerService {
   private onClick(target: HTMLElement): void {
     logger.debug('🎯 Option+click detected on:', target);
 
-    if (this.pointedElement === target) {
-      this.overlayManagerService.clearOverlay(OverlayType.SELECTION);
+    const index = this.selectedElements.indexOf(target);
+    if (index !== -1) {
+      // Deselecting
+      this.selectedElements.splice(index, 1);
+      this.overlayManagerService.clearOverlay(OverlayType.SELECTION, target);
+      this.updateSelectionIndexes();
       this.overlayManagerService.overlay(OverlayType.HOVER, target);
-
-      this.pointedElement = null;
       this.hoveredElement = target;
+      this.sendToBackground();
     } else {
-      this.overlayManagerService.overlay(OverlayType.SELECTION, target);
+      // Selecting
+      this.selectedElements.push(target);
+      this.overlayManagerService.overlay(OverlayType.SELECTION, target, this.selectedElements.length);
       this.overlayManagerService.clearOverlay(OverlayType.HOVER);
-
-      this.pointedElement = target;
       this.hoveredElement = null;
-
-      this.sendToBackground(target);
+      this.sendToBackground();
     }
   }
 
@@ -72,8 +74,8 @@ export default class ElementPointerService {
 
   public disable(): void {
     this.overlayManagerService.clearOverlay(OverlayType.HOVER);
-    this.overlayManagerService.clearOverlay(OverlayType.SELECTION);
-    this.pointedElement = null;
+    this.overlayManagerService.clearAllSelectionOverlays();
+    this.selectedElements = [];
     this.hoveredElement = null;
 
     this.triggerKeyService.unregisterListeners();
@@ -98,6 +100,7 @@ export default class ElementPointerService {
 
     this.triggerMouseService.unregisterListeners();
     this.overlayManagerService.clearOverlay(OverlayType.HOVER);
+    this.overlayManagerService.clearAllSelectionOverlays();
 
     // document cursor pointer
     document.body.classList.remove(POINTING_CLASS);
@@ -106,18 +109,24 @@ export default class ElementPointerService {
     logger.debug('Pointing stopped');
   }
 
-  private sendToBackground(target: HTMLElement): void {
-    logger.info('📤 Sending target to background:', target);
+  private updateSelectionIndexes(): void {
+    this.selectedElements.forEach((element, index) => {
+      this.overlayManagerService.updateSelectionIndex(element, index + 1);
+    });
+  }
 
-    // Send directly to background script (isolated world has chrome.runtime access)
+  private sendToBackground(): void {
+    logger.info('📤 Sending selected elements to background:', this.selectedElements);
+
+    // Send array of selected elements to background script
     chrome.runtime.sendMessage({
       type: 'ELEMENT_SELECTED',
-      data: adaptTargetToElement(target) as TargetedElement,
+      data: this.selectedElements.map(adaptTargetToElement) as TargetedElement[],
     }, (response: any) => {
       if (chrome.runtime.lastError) {
         logger.error('❌ Error sending to background:', chrome.runtime.lastError);
       } else {
-        logger.debug('✅ Element sent successfully:', response);
+        logger.debug('✅ Elements sent successfully:', response);
       }
     });
   }

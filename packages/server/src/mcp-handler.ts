@@ -47,7 +47,7 @@ export default class MCPHandler {
       tools: [
         {
           name: MCPToolName.GET_POINTED_ELEMENT,
-          description: 'Get information about the currently pointed/shown DOM element from the browser extension, in order to let you see a specific element the user is showing you on his/her the browser.',
+          description: 'Get information about the currently pointed/shown DOM elements from the browser extension. Use this tool when the user says "UIOP" or wants you to analyze specific elements they\'ve selected in their browser.',
           inputSchema: {
             type: 'object',
             properties: {},
@@ -67,25 +67,30 @@ export default class MCPHandler {
   }
 
   private getTargetedElement() {
-    const element = this.wsServer.getCurrentElement();
+    const elements = this.wsServer.getCurrentElements();
 
-    if (!element) {
+    if (!elements || elements.length === 0) {
       return {
         content: [
           {
             type: 'text',
-            text: 'No element is currently pointed. '
-              + 'The user needs to point an element in their browser using Option+Click.',
+            text: 'No elements are currently pointed. '
+              + 'The user needs to point elements in their browser using Option+Click.',
           },
         ],
       };
     }
 
+    let content = `Selected ${elements.length} element(s):\n\n`;
+    elements.forEach((element, index) => {
+      content += `Element ${index + 1}:\n${JSON.stringify(element, null, 2)}\n\n`;
+    });
+
     return {
       content: [
         {
           type: 'text',
-          text: JSON.stringify(element, null, 2),
+          text: content.trim(),
         },
       ],
     };

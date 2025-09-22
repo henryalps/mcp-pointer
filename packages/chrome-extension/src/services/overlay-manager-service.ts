@@ -3,6 +3,7 @@ import autoAssignOverlayPositionAndSize from '../utils/position';
 interface OverlayWrapper {
   overlay: HTMLDivElement;
   target: HTMLElement | null;
+  index?: number;
 }
 
 export enum OverlayType {
@@ -26,32 +27,73 @@ const OVERLAY_CONFIG = {
 };
 
 export default class OverlayManagerService {
-  private overlayWrappers = new Map<OverlayType, OverlayWrapper>();
+  private overlayWrappers = new Map<OverlayType | string, OverlayWrapper>();
+  private selectionOverlays = new Map<HTMLElement, OverlayWrapper>();
 
-  overlay(type: OverlayType, target: HTMLElement): void {
-    this.assignTargetToOverlay(type, target);
-    this.positionOverlay(type);
-  }
-
-  clearOverlay(type: OverlayType): void {
-    const wrapper = this.overlayWrappers.get(type);
-    const overlay = wrapper?.overlay;
-
-    if (overlay) {
-      overlay.remove();
-      this.overlayWrappers.delete(type);
+  overlay(type: OverlayType, target: HTMLElement, index?: number): void {
+    if (type === OverlayType.SELECTION) {
+      const wrapper = this.selectionOverlays.get(target);
+      if (!wrapper) {
+        this.assignTargetToOverlay(type, target, index);
+      }
+      this.positionOverlay(type, target);
+    } else {
+      this.assignTargetToOverlay(type, target, index);
+      this.positionOverlay(type);
     }
   }
 
-  private assignTargetToOverlay(type: OverlayType, target: HTMLElement): void {
-    const wrapper = this.overlayWrappers.get(type);
+  clearOverlay(type: OverlayType, target?: HTMLElement): void {
+    if (type === OverlayType.SELECTION && target) {
+      const wrapper = this.selectionOverlays.get(target);
+      if (wrapper) {
+        wrapper.overlay.remove();
+        this.selectionOverlays.delete(target);
+      }
+    } else {
+      const wrapper = this.overlayWrappers.get(type);
+      const overlay = wrapper?.overlay;
 
-    const overlay = wrapper?.overlay || this.buildOverlayElement(type);
-
-    this.overlayWrappers.set(type, { overlay, target });
+      if (overlay) {
+        overlay.remove();
+        this.overlayWrappers.delete(type);
+      }
+    }
   }
 
-  private buildOverlayElement(type: OverlayType): HTMLDivElement {
+  clearAllSelectionOverlays(): void {
+    this.selectionOverlays.forEach(wrapper => wrapper.overlay.remove());
+    this.selectionOverlays.clear();
+  }
+
+  updateSelectionIndex(target: HTMLElement, newIndex: number): void {
+    const wrapper = this.selectionOverlays.get(target);
+    if (wrapper) {
+      wrapper.index = newIndex;
+      const indexElement = wrapper.overlay.querySelector('.mcp-pointer__overlay-index') as HTMLElement;
+      if (indexElement) {
+        indexElement.textContent = newIndex.toString();
+      }
+    }
+  }
+
+  private assignTargetToOverlay(type: OverlayType, target: HTMLElement, index?: number): void {
+    if (type === OverlayType.SELECTION) {
+      const wrapper = this.selectionOverlays.get(target);
+
+      const overlay = wrapper?.overlay || this.buildOverlayElement(type, index);
+
+      this.selectionOverlays.set(target, { overlay, target, index });
+    } else {
+      const wrapper = this.overlayWrappers.get(type);
+
+      const overlay = wrapper?.overlay || this.buildOverlayElement(type, index);
+
+      this.overlayWrappers.set(type, { overlay, target, index });
+    }
+  }
+
+  private buildOverlayElement(type: OverlayType, index?: number): HTMLDivElement {
     const overlayConfig = OVERLAY_CONFIG[type];
     const identifier = overlayConfig.typeClassName;
     const overlayClassName = `${OVERLAY_BASE_CLASS} ${identifier}`;
@@ -69,6 +111,12 @@ export default class OverlayManagerService {
     if (overlayConfig.hasGlass) {
       const glass = document.createElement('div');
       glass.className = 'mcp-pointer__overlay-glass';
+      if (type === OverlayType.SELECTION && index !== undefined) {
+        const indexElement = document.createElement('span');
+        indexElement.className = 'mcp-pointer__overlay-index';
+        indexElement.textContent = index.toString();
+        glass.appendChild(indexElement);
+      }
       overlay.appendChild(glass);
     }
 
@@ -77,13 +125,20 @@ export default class OverlayManagerService {
     return overlay;
   }
 
-  private positionOverlay(type: OverlayType): void {
-    const wrapper = this.overlayWrappers.get(type);
-    const overlay = wrapper?.overlay;
-    const target = wrapper?.target;
+  private positionOverlay(type: OverlayType, target?: HTMLElement): void {
+    if (type === OverlayType.SELECTION && target) {
+      const wrapper = this.selectionOverlays.get(target);
+      const overlay = wrapper?.overlay;
+      if (!overlay || !target) return;
+      autoAssignOverlayPositionAndSize(target, overlay);
+    } else {
+      const wrapper = this.overlayWrappers.get(type);
+      const overlay = wrapper?.overlay;
+      const target = wrapper?.target;
 
-    if (!overlay || !target) return;
+      if (!overlay || !target) return;
 
-    autoAssignOverlayPositionAndSize(target, overlay);
+      autoAssignOverlayPositionAndSize(target, overlay);
+    }
   }
 }

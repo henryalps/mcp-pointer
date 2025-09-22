@@ -6,7 +6,7 @@ import logger from './logger';
 export default class PointerWebSocketServer {
   private wss: WebSocketServer | null = null;
 
-  private currentElement: TargetedElement | null = null;
+  private currentElements: TargetedElement[] | null = null;
 
   private port: number;
 
@@ -47,14 +47,14 @@ export default class PointerWebSocketServer {
 
   private handleMessage(message: PointerMessage): void {
     if (message.type === PointerMessageType.ELEMENT_SELECTED && message.data) {
-      this.currentElement = message.data as TargetedElement;
+      this.currentElements = Array.isArray(message.data) ? message.data as TargetedElement[] : [message.data as TargetedElement];
     } else if (message.type === PointerMessageType.ELEMENT_CLEARED) {
-      this.currentElement = null;
+      this.currentElements = null;
     }
   }
 
-  public getCurrentElement(): TargetedElement | null {
-    return this.currentElement;
+  public getCurrentElements(): TargetedElement[] | null {
+    return this.currentElements;
   }
 
   public stop(): void {
