@@ -52,10 +52,8 @@ chrome.runtime.onMessage
               logger.info('✅ Connected');
               break;
             case ConnectionStatus.SENDING:
-              logger.info('📤 Sending elements...');
               break;
             case ConnectionStatus.SENT:
-              logger.info('✓ Elements sent successfully');
               break;
             case ConnectionStatus.ERROR:
               logger.error('❌ Failed:', error);

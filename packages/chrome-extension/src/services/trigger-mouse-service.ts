@@ -2,13 +2,13 @@ import { throttle } from '../utils/performance';
 
 interface TriggerClickServiceParams {
   onHover: (element: HTMLElement) => void;
-  onClick: (element: HTMLElement) => void;
+  onClick: (element: HTMLElement, event: MouseEvent) => void;
 }
 
 export default class TriggerClickService {
   private onHover: (element: HTMLElement) => void;
 
-  private onClick: (element: HTMLElement) => void;
+  private onClick: (element: HTMLElement, event: MouseEvent) => void;
 
   constructor({ onHover, onClick }: TriggerClickServiceParams) {
     this.onHover = onHover;
@@ -20,7 +20,7 @@ export default class TriggerClickService {
 
   registerListeners(): void {
     document.addEventListener('mouseover', this.handleMouseOver);
-    document.addEventListener('click', this.handleClick);
+    document.addEventListener('auxclick', this.handleClick);
 
     // Simulate a hover event at registration time
     const currentElement = this.getElementUnderCursor();
@@ -31,7 +31,7 @@ export default class TriggerClickService {
 
   unregisterListeners(): void {
     document.removeEventListener('mouseover', this.handleMouseOver);
-    document.removeEventListener('click', this.handleClick);
+    document.removeEventListener('auxclick', this.handleClick);
   }
 
   private handleMouseOver(event: MouseEvent): void {
@@ -43,7 +43,7 @@ export default class TriggerClickService {
     event.stopImmediatePropagation();
     event.preventDefault();
 
-    this.onClick(event.target as HTMLElement);
+    this.onClick(event.target as HTMLElement, event);
   }
 
   private getElementUnderCursor() {

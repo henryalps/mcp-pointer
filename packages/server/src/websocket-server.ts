@@ -47,7 +47,9 @@ export default class PointerWebSocketServer {
 
   private handleMessage(message: PointerMessage): void {
     if (message.type === PointerMessageType.ELEMENT_SELECTED && message.data) {
-      this.currentElements = Array.isArray(message.data) ? message.data as TargetedElement[] : [message.data as TargetedElement];
+      this.currentElements = Array.isArray(message.data)
+        ? (message.data as TargetedElement[])
+        : [message.data as TargetedElement];
     } else if (message.type === PointerMessageType.ELEMENT_CLEARED) {
       this.currentElements = null;
     }

@@ -47,7 +47,7 @@ export default class MCPHandler {
       tools: [
         {
           name: MCPToolName.GET_POINTED_ELEMENT,
-          description: 'Get information about the currently pointed/shown DOM elements from the browser extension. Use this tool when the user says "UIOP" or wants you to analyze specific elements they\'ve selected in their browser.',
+          description: 'Get information about the currently pointed/shown DOM elements from the browser extension. Use this tool when the user says "UIOP" or wants you to analyze specific elements they\'ve selected in their browser, in order to let you see a specific element the user is showing you on his/her the browser.',
           inputSchema: {
             type: 'object',
             properties: {},

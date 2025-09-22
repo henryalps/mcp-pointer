@@ -44,8 +44,14 @@ export default class ElementPointerService {
     }
   }
 
-  private onClick(target: HTMLElement): void {
-    logger.debug('🎯 Option+click detected on:', target);
+  private onClick(target: HTMLElement, event: MouseEvent): void {
+    if (!event.altKey || event.button !== 1) {
+      return;
+    }
+
+    // Prevent default click behavior when option+middle clicking for selection
+    event.preventDefault();
+    event.stopPropagation();
 
     const index = this.selectedElements.indexOf(target);
     if (index !== -1) {
@@ -59,7 +65,12 @@ export default class ElementPointerService {
     } else {
       // Selecting
       this.selectedElements.push(target);
-      this.overlayManagerService.overlay(OverlayType.SELECTION, target, this.selectedElements.length);
+      this.overlayManagerService.overlay(
+        OverlayType.SELECTION,
+        target,
+        this.selectedElements.indexOf(target) + 1,
+      );
+      this.updateSelectionIndexes();
       this.overlayManagerService.clearOverlay(OverlayType.HOVER);
       this.hoveredElement = null;
       this.sendToBackground();
@@ -100,7 +111,6 @@ export default class ElementPointerService {
 
     this.triggerMouseService.unregisterListeners();
     this.overlayManagerService.clearOverlay(OverlayType.HOVER);
-    this.overlayManagerService.clearAllSelectionOverlays();
 
     // document cursor pointer
     document.body.classList.remove(POINTING_CLASS);

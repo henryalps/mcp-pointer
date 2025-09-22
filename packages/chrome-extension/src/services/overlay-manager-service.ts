@@ -62,7 +62,7 @@ export default class OverlayManagerService {
   }
 
   clearAllSelectionOverlays(): void {
-    this.selectionOverlays.forEach(wrapper => wrapper.overlay.remove());
+    this.selectionOverlays.forEach((wrapper) => wrapper.overlay.remove());
     this.selectionOverlays.clear();
   }
 
@@ -73,6 +73,8 @@ export default class OverlayManagerService {
       const indexElement = wrapper.overlay.querySelector('.mcp-pointer__overlay-index') as HTMLElement;
       if (indexElement) {
         indexElement.textContent = newIndex.toString();
+        indexElement.style.opacity = '1';
+        indexElement.style.visibility = 'visible';
       }
     }
   }
@@ -115,6 +117,9 @@ export default class OverlayManagerService {
         const indexElement = document.createElement('span');
         indexElement.className = 'mcp-pointer__overlay-index';
         indexElement.textContent = index.toString();
+        indexElement.style.opacity = '1';
+        indexElement.style.visibility = 'visible';
+
         glass.appendChild(indexElement);
       }
       overlay.appendChild(glass);
@@ -134,11 +139,11 @@ export default class OverlayManagerService {
     } else {
       const wrapper = this.overlayWrappers.get(type);
       const overlay = wrapper?.overlay;
-      const target = wrapper?.target;
+      const overlayTarget = wrapper?.target;
 
-      if (!overlay || !target) return;
+      if (!overlay || !overlayTarget) return;
 
-      autoAssignOverlayPositionAndSize(target, overlay);
+      autoAssignOverlayPositionAndSize(overlayTarget, overlay);
     }
   }
 }

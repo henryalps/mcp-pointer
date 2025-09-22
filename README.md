@@ -24,12 +24,44 @@ The extension lets you visually select DOM elements in the browser, and the MCP 
 - ⚛️ **React Component Detection** - Component names and source files via Fiber (experimental)
 - 🔗 **WebSocket Connection** - Real-time communication between browser and AI tools
 - 🤖 **MCP Compatible** - Works with Claude Code and other MCP-enabled AI tools
+- 🔄 **Multiple Element Selection** - Select multiple elements in sequence with visual feedback
+- 🖱️ **Middle Click Selection** - Use `Option+Middle Click` to avoid triggering element actions
 
 ## 🎬 Usage example (video)
 
 https://github.com/user-attachments/assets/98c4adf6-1f05-4c9b-be41-0416ab784e2c
 
 See MCP Pointer in action: `Option+Click` any element in your browser, then ask your agentic coding tool about it (in this example, Claude Code). The AI gets complete textual context about the selected DOM element including CSS properties, url, selector, and more.
+
+
+## 🔄 Multiple Element Selection
+
+![Multiple Select Demo](demo.png)
+
+MCP Pointer now supports selecting multiple DOM elements in sequence! This feature allows you to build a collection of related elements for comprehensive analysis.
+
+### How to Use
+
+1. **Enable targeting mode** by pressing your trigger key (default varies by system)
+2. **Select first element**: `Option+Middle Click` on any element
+3. **Select additional elements**: Continue `Option+Middle Click` on other elements
+4. **Deselect elements**: `Option+Middle Click` the same element again to remove it from selection
+5. **View selection**: All selected elements are highlighted with visual overlays
+
+### Key Features
+
+- **Sequential Selection**: Elements are numbered in selection order (1, 2, 3...)
+- **Visual Feedback**: Selected elements show distinctive highlighting with position indicators
+- **Clean Interaction**: Uses middle mouse button to avoid triggering element click events
+- **Dynamic Updates**: Selection indexes automatically update when elements are added/removed
+- **Complete Data**: All selected elements are sent together to your AI tool for analysis
+
+### Technical Details
+
+- **Selection Method**: `Option+Middle Click` (prevents accidental element triggering)
+- **Index Display**: Sequential numbering with high contrast visibility
+- **Event Handling**: Prevents default click behavior to avoid unwanted page interactions
+- **Data Structure**: Maintains array of selected elements with proper ordering
 
 ## 🚀 Getting Started
 
@@ -90,8 +122,8 @@ After configuration, **restart your coding tool** to load the MCP connection.
 
 ### 3. Start Using
 
-1. **Navigate to any webpage** 
-2. **`Option+Click`** any element to select it
+1. **Navigate to any webpage**
+2. **`Option+Middle Click`** any element to select it (middle click prevents triggering element actions)
 3. **Ask your AI** to analyze the targeted element!
 
 Your AI tool will automatically start the MCP server when needed using the `npx -y @mcp-pointer/server start` command.
@@ -101,7 +133,7 @@ Your AI tool will automatically start the MCP server when needed using the `npx 
 
 ## 🎯 How It Works
 
-1. **Element Selection**: Content script captures `Option+Click` events
+1. **Element Selection**: Content script captures `Option+Middle Click` events
 2. **Data Extraction**: Analyzes element structure, CSS, and framework info
 3. **WebSocket Transport**: Sends data to MCP server on port 7007
 4. **MCP Protocol**: Makes data available to AI tools via MCP tools
@@ -179,4 +211,4 @@ We welcome contributions! Please see our [CONTRIBUTING.md](./CONTRIBUTING.md) gu
 
 **Made with ❤️ for AI-powered web development**
 
-*Now your AI can analyze any element you point at with `Option+Click`! 👆*
+*Now your AI can analyze any element you point at with `Option+Middle Click`! 👆*
