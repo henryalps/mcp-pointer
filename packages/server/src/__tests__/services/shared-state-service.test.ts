@@ -31,6 +31,7 @@ describe('SharedStateService', () => {
     const loadedElement = await service.getCurrentElement();
 
     expect(loadedElement).toBeTruthy();
+    expect(loadedElement!.idx).toBe(mockElement.idx);
     expect(loadedElement!.selector).toBe(mockElement.selector);
     expect(loadedElement!.tagName).toBe(mockElement.tagName);
     expect(loadedElement!.id).toBe(mockElement.id);
@@ -80,6 +81,7 @@ describe('SharedStateService', () => {
     const loadedElement = await service.getCurrentElement();
     expect(loadedElement).toBeTruthy();
     expect(loadedElement!.selector).toBe(mockElement.selector);
+    expect(loadedElement!.idx).toBe(mockElement.idx);
   });
 
   it('should overwrite previous element', async () => {

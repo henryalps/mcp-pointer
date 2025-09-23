@@ -26,6 +26,7 @@ export async function cleanupTestFiles(): Promise<void> {
 
 export function createMockElement(): TargetedElement {
   return {
+    idx: 1,
     selector: 'div.test-element',
     tagName: 'DIV',
     id: 'test-id',

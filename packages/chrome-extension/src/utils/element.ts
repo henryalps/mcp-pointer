@@ -918,10 +918,11 @@ export function getElementClasses(element: HTMLElement): string[] {
   return classNameStr.split(' ').filter((c: string) => c.trim());
 }
 
-export function adaptTargetToElement(element: HTMLElement): TargetedElement {
+export function adaptTargetToElement(element: HTMLElement, selectionIndex: number = 1): TargetedElement {
   const cssProperties = getElementCSSProperties(element);
 
   return {
+    idx: selectionIndex,
     selector: generateSelector(element),
     tagName: element.tagName,
     id: element.id || undefined,

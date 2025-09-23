@@ -241,6 +241,7 @@ export interface ComponentInfo {
 }
 
 export interface TargetedElement {
+  idx: number;
   selector: string;
   tagName: string;
   id?: string;

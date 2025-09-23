@@ -131,7 +131,9 @@ export default class ElementPointerService {
     // Send array of selected elements to background script
     chrome.runtime.sendMessage({
       type: 'ELEMENT_SELECTED',
-      data: this.selectedElements.map(adaptTargetToElement) as TargetedElement[],
+      data: this.selectedElements.map(
+        (element, index) => adaptTargetToElement(element, index + 1),
+      ) as TargetedElement[],
     }, (response: any) => {
       if (chrome.runtime.lastError) {
         logger.error('❌ Error sending to background:', chrome.runtime.lastError);
