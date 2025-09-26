@@ -9,6 +9,8 @@ let currentConfig: ExtensionConfig | null = null;
 const selectionsByTab = new Map<number, TargetedElement[]>();
 let aggregatedSelections: TargetedElement[] = [];
 
+const SELECTIONS_STORAGE_KEY = 'mcp_pointer_selected_elements';
+
 const statusLogger = (status: ConnectionStatus, error?: string) => {
   switch (status) {
     case ConnectionStatus.CONNECTING:
@@ -67,6 +69,14 @@ async function sendSelectionsToServer(elements: TargetedElement[]): Promise<void
   }
 }
 
+async function saveSelectionsToStorage(): Promise<void> {
+  try {
+    await chrome.storage.local.set({ [SELECTIONS_STORAGE_KEY]: aggregatedSelections });
+  } catch (error) {
+    logger.error('Failed to persist selections:', error);
+  }
+}
+
 function broadcastSelectionsToTabs(tabIds: Set<number>): void {
   tabIds.forEach((tabId) => {
     if (tabId < 0 || Number.isNaN(tabId)) {
@@ -94,15 +104,32 @@ function broadcastSelectionsToTabs(tabIds: Set<number>): void {
 
 async function rebuildSelections(notifyTabs: Set<number>): Promise<void> {
   const flattened = Array.from(selectionsByTab.values()).flat();
-  aggregatedSelections = sortSelections(flattened).map((element, index) => ({
+  const rebuiltAggregated = sortSelections(flattened).map((element, index) => ({
     ...element,
     idx: index + 1,
   }));
 
+  const rebuiltMap = new Map<number, TargetedElement[]>();
+  rebuiltAggregated.forEach((element) => {
+    if (typeof element.tabId === 'number') {
+      if (!rebuiltMap.has(element.tabId)) {
+        rebuiltMap.set(element.tabId, []);
+      }
+      rebuiltMap.get(element.tabId)!.push({ ...element });
+    }
+  });
+
+  aggregatedSelections = rebuiltAggregated;
+  selectionsByTab.clear();
+  rebuiltMap.forEach((value, key) => {
+    selectionsByTab.set(key, value);
+  });
+
   await sendSelectionsToServer(aggregatedSelections);
+  await saveSelectionsToStorage();
 
   // Always notify current tabs plus any explicit notify targets
-  const currentTabIds = new Set<number>(selectionsByTab.keys());
+  const currentTabIds = new Set<number>(rebuiltMap.keys());
   const tabsToNotify = new Set<number>([
     ...Array.from(notifyTabs),
     ...Array.from(currentTabIds),
@@ -169,6 +196,72 @@ function clearTabSelections(tabId: number): void {
 }
 
 // Initialize when service worker starts
+async function tabExists(tabId: number): Promise<boolean> {
+  return new Promise((resolve) => {
+    chrome.tabs.get(tabId, () => {
+      const runtimeError = chrome.runtime.lastError;
+      resolve(!runtimeError);
+    });
+  });
+}
+
+async function loadSelectionsFromStorage(): Promise<void> {
+  try {
+    const stored = await chrome.storage.local.get(SELECTIONS_STORAGE_KEY);
+    const rawElements = (stored?.[SELECTIONS_STORAGE_KEY] as TargetedElement[] | undefined) ?? [];
+
+    selectionsByTab.clear();
+
+    const validatedElements: TargetedElement[] = [];
+
+    // Validate stored selections to ensure their tabs still exist
+    for (const element of rawElements) {
+      if (typeof element !== 'object' || element == null) {
+        continue;
+      }
+
+      if (typeof element.tabId === 'number') {
+        const exists = await tabExists(element.tabId);
+        if (!exists) {
+          continue;
+        }
+        if (!selectionsByTab.has(element.tabId)) {
+          selectionsByTab.set(element.tabId, []);
+        }
+        selectionsByTab.get(element.tabId)!.push({ ...element });
+      }
+
+      validatedElements.push({ ...element });
+    }
+
+    aggregatedSelections = sortSelections(validatedElements).map((element, index) => ({
+      ...element,
+      idx: index + 1,
+    }));
+
+    // Ensure tab map indices align with refreshed aggregated list
+    selectionsByTab.clear();
+    aggregatedSelections.forEach((element) => {
+      if (typeof element.tabId === 'number') {
+        if (!selectionsByTab.has(element.tabId)) {
+          selectionsByTab.set(element.tabId, []);
+        }
+        selectionsByTab.get(element.tabId)!.push({ ...element });
+      }
+    });
+
+    await saveSelectionsToStorage();
+    await sendSelectionsToServer(aggregatedSelections);
+
+    const tabsToNotify = new Set<number>(selectionsByTab.keys());
+    broadcastSelectionsToTabs(tabsToNotify);
+  } catch (error) {
+    logger.error('Failed to load persisted selections:', error);
+    selectionsByTab.clear();
+    aggregatedSelections = [];
+  }
+}
+
 async function initialize() {
   currentConfig = await ConfigStorageService.load();
 
@@ -179,6 +272,8 @@ async function initialize() {
     enabled: currentConfig.enabled,
     port: currentConfig.websocket.port,
   });
+
+  await loadSelectionsFromStorage();
 }
 
 const initializationPromise = initialize();
