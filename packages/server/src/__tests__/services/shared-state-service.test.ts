@@ -27,27 +27,29 @@ describe('SharedStateService', () => {
   it('should save and load current element', async () => {
     const mockElement = createMockElement();
 
-    await service.saveCurrentElement(mockElement);
-    const loadedElement = await service.getCurrentElement();
+    await service.saveCurrentElements([mockElement]);
+    const loadedElements = await service.getCurrentElements();
 
-    expect(loadedElement).toBeTruthy();
-    expect(loadedElement!.idx).toBe(mockElement.idx);
-    expect(loadedElement!.selector).toBe(mockElement.selector);
-    expect(loadedElement!.tagName).toBe(mockElement.tagName);
-    expect(loadedElement!.id).toBe(mockElement.id);
-    expect(loadedElement!.classes).toEqual(mockElement.classes);
-    expect(loadedElement!.innerText).toBe(mockElement.innerText);
-    expect(loadedElement!.position).toEqual(mockElement.position);
-    expect(loadedElement!.allCss).toEqual(mockElement.allCss);
-    expect(loadedElement!.url).toBe(mockElement.url);
-    expect(loadedElement!.tabId).toBe(mockElement.tabId);
+    expect(loadedElements).toBeTruthy();
+    expect(loadedElements).toHaveLength(1);
+    const [loadedElement] = loadedElements!;
+    expect(loadedElement.idx).toBe(mockElement.idx);
+    expect(loadedElement.selector).toBe(mockElement.selector);
+    expect(loadedElement.tagName).toBe(mockElement.tagName);
+    expect(loadedElement.id).toBe(mockElement.id);
+    expect(loadedElement.classes).toEqual(mockElement.classes);
+    expect(loadedElement.innerText).toBe(mockElement.innerText);
+    expect(loadedElement.position).toEqual(mockElement.position);
+    expect(loadedElement.allCss).toEqual(mockElement.allCss);
+    expect(loadedElement.url).toBe(mockElement.url);
+    expect(loadedElement.tabId).toBe(mockElement.tabId);
   });
 
   it('should handle null element', async () => {
-    await service.saveCurrentElement(null);
-    const loadedElement = await service.getCurrentElement();
+    await service.saveCurrentElements(null);
+    const loadedElements = await service.getCurrentElements();
 
-    expect(loadedElement).toBeNull();
+    expect(loadedElements).toBeNull();
   });
 
   it('should return null for missing file', async () => {
@@ -58,16 +60,16 @@ describe('SharedStateService', () => {
       // File doesn't exist, which is fine
     }
 
-    const loadedElement = await service.getCurrentElement();
-    expect(loadedElement).toBeNull();
+    const loadedElements = await service.getCurrentElements();
+    expect(loadedElements).toBeNull();
   });
 
   it('should handle corrupted file gracefully', async () => {
     // Write invalid JSON to the file
     await fs.writeFile(TEST_SHARED_STATE_PATH, 'invalid json content');
 
-    const loadedElement = await service.getCurrentElement();
-    expect(loadedElement).toBeNull();
+    const loadedElements = await service.getCurrentElements();
+    expect(loadedElements).toBeNull();
   });
 
   it('should save element over corrupted file', async () => {
@@ -75,12 +77,13 @@ describe('SharedStateService', () => {
     await fs.writeFile(TEST_SHARED_STATE_PATH, 'invalid json content');
 
     const mockElement = createMockElement();
-    await service.saveCurrentElement(mockElement);
+    await service.saveCurrentElements([mockElement]);
 
-    const loadedElement = await service.getCurrentElement();
-    expect(loadedElement).toBeTruthy();
-    expect(loadedElement!.selector).toBe(mockElement.selector);
-    expect(loadedElement!.idx).toBe(mockElement.idx);
+    const loadedElements = await service.getCurrentElements();
+    expect(loadedElements).toBeTruthy();
+    expect(loadedElements).toHaveLength(1);
+    expect(loadedElements![0].selector).toBe(mockElement.selector);
+    expect(loadedElements![0].idx).toBe(mockElement.idx);
   });
 
   it('should overwrite previous element', async () => {
@@ -90,11 +93,12 @@ describe('SharedStateService', () => {
     const secondElement = createMockElement();
     secondElement.selector = 'div.second-element';
 
-    await service.saveCurrentElement(firstElement);
-    await service.saveCurrentElement(secondElement);
+    await service.saveCurrentElements([firstElement]);
+    await service.saveCurrentElements([secondElement]);
 
-    const loadedElement = await service.getCurrentElement();
-    expect(loadedElement).toBeTruthy();
-    expect(loadedElement!.selector).toBe('div.second-element');
+    const loadedElements = await service.getCurrentElements();
+    expect(loadedElements).toBeTruthy();
+    expect(loadedElements).toHaveLength(1);
+    expect(loadedElements![0].selector).toBe('div.second-element');
   });
 });

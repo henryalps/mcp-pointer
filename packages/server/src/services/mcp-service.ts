@@ -67,9 +67,9 @@ export default class MCPService {
   }
 
   private async getTargetedElement() {
-    const element = await this.sharedState.getCurrentElement();
+    const elements = await this.sharedState.getCurrentElements();
 
-    if (!element) {
+    if (!elements || elements.length === 0) {
       return {
         content: [
           {
@@ -85,7 +85,7 @@ export default class MCPService {
       content: [
         {
           type: 'text',
-          text: JSON.stringify(element, null, 2),
+          text: JSON.stringify(elements, null, 2),
         },
       ],
     };

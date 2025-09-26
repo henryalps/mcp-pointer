@@ -6,17 +6,17 @@ import logger from '../logger';
 const SHARED_STATE_FILE_PATH = '/tmp/mcp-pointer-shared-state.json';
 
 export default class SharedStateService {
-  public async saveCurrentElement(element: TargetedElement | null): Promise<void> {
+  public async saveCurrentElements(elements: TargetedElement[] | null): Promise<void> {
     try {
-      const json = JSON.stringify(element, null, 2);
+      const json = JSON.stringify(elements, null, 2);
       await fs.writeFile(SHARED_STATE_FILE_PATH, json, 'utf8');
-      logger.debug('Current element saved to shared state file');
+      logger.debug('Current selections saved to shared state file');
     } catch (error) {
       logger.error('Failed to save current element:', error);
     }
   }
 
-  public async getCurrentElement(): Promise<TargetedElement | null> {
+  public async getCurrentElements(): Promise<TargetedElement[] | null> {
     try {
       const json = await fs.readFile(SHARED_STATE_FILE_PATH, 'utf8');
       return JSON.parse(json);

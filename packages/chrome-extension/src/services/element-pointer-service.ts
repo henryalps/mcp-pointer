@@ -7,6 +7,11 @@ import { adaptTargetToElement } from '../utils/element';
 
 const POINTING_CLASS = 'mcp-pointer--is-pointing';
 
+interface SelectionRecord {
+  element: HTMLElement;
+  target: TargetedElement;
+}
+
 export default class ElementPointerService {
   private triggerKeyService: TriggerKeyService;
 
@@ -18,7 +23,9 @@ export default class ElementPointerService {
 
   private hoveredElement: HTMLElement | null = null;
 
-  private selectedElements: HTMLElement[] = [];
+  private selectedRecords: SelectionRecord[] = [];
+
+  private suppressBackgroundSync = false;
 
   constructor() {
     this.triggerKeyService = new TriggerKeyService({
@@ -35,7 +42,7 @@ export default class ElementPointerService {
   private onHover(target: HTMLElement): void {
     if (this.hoveredElement === target) return;
 
-    if (this.selectedElements.includes(target)) {
+    if (this.selectedRecords.some((record) => record.element === target)) {
       this.overlayManagerService.clearOverlay(OverlayType.HOVER);
       this.hoveredElement = null;
     } else {
@@ -53,27 +60,26 @@ export default class ElementPointerService {
     event.preventDefault();
     event.stopPropagation();
 
-    const index = this.selectedElements.indexOf(target);
+    const index = this.selectedRecords.findIndex((record) => record.element === target);
     if (index !== -1) {
       // Deselecting
-      this.selectedElements.splice(index, 1);
-      this.overlayManagerService.clearOverlay(OverlayType.SELECTION, target);
-      this.updateSelectionIndexes();
+      const [removed] = this.selectedRecords.splice(index, 1);
+      this.overlayManagerService.clearOverlay(OverlayType.SELECTION, removed.element);
+      this.updateSelectionState();
       this.overlayManagerService.overlay(OverlayType.HOVER, target);
       this.hoveredElement = target;
-      this.sendToBackground();
     } else {
       // Selecting
-      this.selectedElements.push(target);
+      const newTarget = adaptTargetToElement(target, this.selectedRecords.length + 1);
+      this.selectedRecords.push({ element: target, target: newTarget });
       this.overlayManagerService.overlay(
         OverlayType.SELECTION,
         target,
-        this.selectedElements.indexOf(target) + 1,
+        newTarget.idx ?? this.selectedRecords.length,
       );
-      this.updateSelectionIndexes();
+      this.updateSelectionState();
       this.overlayManagerService.clearOverlay(OverlayType.HOVER);
       this.hoveredElement = null;
-      this.sendToBackground();
     }
   }
 
@@ -86,7 +92,7 @@ export default class ElementPointerService {
   public disable(): void {
     this.overlayManagerService.clearOverlay(OverlayType.HOVER);
     this.overlayManagerService.clearAllSelectionOverlays();
-    this.selectedElements = [];
+    this.selectedRecords = [];
     this.hoveredElement = null;
 
     this.triggerKeyService.unregisterListeners();
@@ -120,20 +126,33 @@ export default class ElementPointerService {
   }
 
   private updateSelectionIndexes(): void {
-    this.selectedElements.forEach((element, index) => {
-      this.overlayManagerService.updateSelectionIndex(element, index + 1);
+    this.selectedRecords.forEach((record, index) => {
+      const displayIndex = record.target.idx ?? (index + 1);
+      this.overlayManagerService.updateSelectionIndex(record.element, displayIndex);
     });
   }
 
-  private sendToBackground(): void {
-    logger.info('📤 Sending selected elements to background:', this.selectedElements);
+  private rebuildTargets(): void {
+    this.selectedRecords = this.selectedRecords.map((record, index) => {
+      const updated = adaptTargetToElement(record.element, index + 1);
+      const existingIdx = record.target.idx;
+      return {
+        element: record.element,
+        target: {
+          ...updated,
+          idx: existingIdx ?? updated.idx,
+          timestamp: record.target.timestamp ?? updated.timestamp,
+        },
+      };
+    });
+  }
 
-    // Send array of selected elements to background script
+  private sendSelectionsToBackground(targets: TargetedElement[]): void {
+    logger.info('📤 Sending selected elements to background:', targets);
+
     chrome.runtime.sendMessage({
       type: 'ELEMENT_SELECTED',
-      data: this.selectedElements.map(
-        (element, index) => adaptTargetToElement(element, index + 1),
-      ) as TargetedElement[],
+      data: targets,
     }, (response: any) => {
       if (chrome.runtime.lastError) {
         logger.error('❌ Error sending to background:', chrome.runtime.lastError);
@@ -141,5 +160,51 @@ export default class ElementPointerService {
         logger.debug('✅ Elements sent successfully:', response);
       }
     });
+  }
+
+  private updateSelectionState(options: { notifyBackground?: boolean } = {}): void {
+    const { notifyBackground = true } = options;
+
+    this.updateSelectionIndexes();
+    this.rebuildTargets();
+
+    if (!notifyBackground || this.suppressBackgroundSync) {
+      return;
+    }
+
+    const targets = this.selectedRecords.map((record) => record.target);
+    this.sendSelectionsToBackground(targets);
+  }
+
+  public syncSelectionsFromBackground(targets: TargetedElement[]): void {
+    this.suppressBackgroundSync = true;
+
+    this.overlayManagerService.clearOverlay(OverlayType.HOVER);
+    this.overlayManagerService.clearAllSelectionOverlays();
+    this.selectedRecords = [];
+    this.hoveredElement = null;
+
+    const sortedTargets = [...targets].sort((a, b) => a.idx - b.idx);
+
+    sortedTargets.forEach((target) => {
+      try {
+        const element = document.querySelector(target.selector) as HTMLElement | null;
+        if (!element) {
+          logger.debug('未找到需要同步的元素:', target.selector);
+          return;
+        }
+
+        this.overlayManagerService.overlay(OverlayType.SELECTION, element, target.idx);
+        this.selectedRecords.push({
+          element,
+          target: { ...target },
+        });
+      } catch (error) {
+        logger.debug('无法同步选中元素:', error);
+      }
+    });
+
+    this.updateSelectionState({ notifyBackground: false });
+    this.suppressBackgroundSync = false;
   }
 }

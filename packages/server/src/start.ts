@@ -17,10 +17,12 @@ function initializeServices(port: string | number): void {
 function setupMessageHandler(): void {
   wsService.registerMessageHandler(async (type: string, data: any) => {
     if (type === PointerMessageType.ELEMENT_SELECTED && data) {
-      const element = data as TargetedElement;
-      await sharedState.saveCurrentElement(element);
+      const elements = Array.isArray(data)
+        ? (data as TargetedElement[])
+        : [data as TargetedElement];
+      await sharedState.saveCurrentElements(elements);
     } else if (type === PointerMessageType.ELEMENT_CLEARED) {
-      await sharedState.saveCurrentElement(null);
+      await sharedState.saveCurrentElements(null);
     }
   });
 }

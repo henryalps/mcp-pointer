@@ -32,6 +32,20 @@
     </form>
 
     <div class="status" id="status"></div>
+
+    <section class="selection-section">
+      <h2>Selected Elements</h2>
+      <p class="selection-empty" id="selectionEmpty">No selected elements</p>
+      <ul class="selection-list" id="selectionList"></ul>
+      <div class="selection-actions">
+        <label class="selection-toggle-all">
+          <input type="checkbox" id="toggleAllSelections">
+          <span>Select / Deselect All</span>
+        </label>
+        <button type="button" id="refreshSelectionsBtn" class="btn btn-secondary">Refresh</button>
+        <button type="button" id="unselectBtn" class="btn btn-danger" disabled>Deselect</button>
+      </div>
+    </section>
   </div>
   
   <script src="popup.js"></script>

@@ -42,5 +42,25 @@ ConfigStorageService.onChange((newConfig) => {
   }
 });
 
+chrome.runtime.onMessage.addListener((request: any, _sender, sendResponse) => {
+  if (!pointer) {
+    sendResponse({ success: false, error: 'Pointer not initialized' });
+    return false;
+  }
+
+  if (request?.type === 'SYNC_TAB_SELECTIONS') {
+    try {
+      pointer.syncSelectionsFromBackground(Array.isArray(request.data) ? request.data : []);
+      sendResponse({ success: true });
+    } catch (error) {
+      logger.error('❌ Failed to sync selections from background:', error);
+      sendResponse({ success: false, error: (error as Error).message });
+    }
+    return false;
+  }
+
+  return false;
+});
+
 // Initialize on script load
 initializePointer();
