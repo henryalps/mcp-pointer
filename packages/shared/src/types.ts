@@ -247,6 +247,7 @@ export interface TargetedElement {
   id?: string;
   classes: string[];
   innerText: string;
+  outerHTML: string;
   attributes: Record<string, string>;
   position: ElementPosition;
   cssProperties: CSSProperties;

@@ -32,10 +32,7 @@ export default class OverlayManagerService {
 
   overlay(type: OverlayType, target: HTMLElement, index?: number): void {
     if (type === OverlayType.SELECTION) {
-      const wrapper = this.selectionOverlays.get(target);
-      if (!wrapper) {
-        this.assignTargetToOverlay(type, target, index);
-      }
+      this.assignTargetToOverlay(type, target, index);
       this.positionOverlay(type, target);
     } else {
       this.assignTargetToOverlay(type, target, index);
@@ -70,32 +67,34 @@ export default class OverlayManagerService {
     const wrapper = this.selectionOverlays.get(target);
     if (wrapper) {
       wrapper.index = newIndex;
-      const indexElement = wrapper.overlay.querySelector('.mcp-pointer__overlay-index') as HTMLElement;
-      if (indexElement) {
-        indexElement.textContent = newIndex.toString();
-        indexElement.style.opacity = '1';
-        indexElement.style.visibility = 'visible';
-      }
+      this.updateSelectionBadge(wrapper);
     }
   }
 
   private assignTargetToOverlay(type: OverlayType, target: HTMLElement, index?: number): void {
     if (type === OverlayType.SELECTION) {
-      const wrapper = this.selectionOverlays.get(target);
+      const existingWrapper = this.selectionOverlays.get(target);
 
-      const overlay = wrapper?.overlay || this.buildOverlayElement(type, index);
+      if (existingWrapper) {
+        existingWrapper.index = index;
+        this.updateSelectionBadge(existingWrapper);
+        return;
+      }
 
-      this.selectionOverlays.set(target, { overlay, target, index });
+      const overlay = this.buildOverlayElement(type);
+      const wrapper: OverlayWrapper = { overlay, target, index };
+      this.selectionOverlays.set(target, wrapper);
+      this.updateSelectionBadge(wrapper);
     } else {
       const wrapper = this.overlayWrappers.get(type);
 
-      const overlay = wrapper?.overlay || this.buildOverlayElement(type, index);
+      const overlay = wrapper?.overlay || this.buildOverlayElement(type);
 
       this.overlayWrappers.set(type, { overlay, target, index });
     }
   }
 
-  private buildOverlayElement(type: OverlayType, index?: number): HTMLDivElement {
+  private buildOverlayElement(type: OverlayType): HTMLDivElement {
     const overlayConfig = OVERLAY_CONFIG[type];
     const identifier = overlayConfig.typeClassName;
     const overlayClassName = `${OVERLAY_BASE_CLASS} ${identifier}`;
@@ -113,12 +112,11 @@ export default class OverlayManagerService {
     if (overlayConfig.hasGlass) {
       const glass = document.createElement('div');
       glass.className = 'mcp-pointer__overlay-glass';
-      if (type === OverlayType.SELECTION && index !== undefined) {
+      if (type === OverlayType.SELECTION) {
         const indexElement = document.createElement('span');
         indexElement.className = 'mcp-pointer__overlay-index';
-        indexElement.textContent = index.toString();
-        indexElement.style.opacity = '1';
-        indexElement.style.visibility = 'visible';
+        indexElement.style.opacity = '0';
+        indexElement.style.visibility = 'hidden';
 
         glass.appendChild(indexElement);
       }
@@ -145,5 +143,45 @@ export default class OverlayManagerService {
 
       autoAssignOverlayPositionAndSize(overlayTarget, overlay);
     }
+  }
+
+  private updateSelectionBadge(wrapper: OverlayWrapper): void {
+    const { overlay, target, index } = wrapper;
+    if (!overlay || !target) return;
+
+    const badge = overlay.querySelector('.mcp-pointer__overlay-index') as HTMLElement | null;
+    if (!badge) return;
+
+    const label = this.buildElementLabel(target);
+    const pieces: string[] = [];
+
+    if (typeof index === 'number' && Number.isFinite(index)) {
+      pieces.push(index.toString());
+    }
+
+    if (label) {
+      pieces.push(label.slice(-3));
+    }
+
+    badge.textContent = pieces.join(' · ');
+    badge.style.opacity = pieces.length > 0 ? '1' : '0';
+    badge.style.visibility = pieces.length > 0 ? 'visible' : 'hidden';
+  }
+
+  private buildElementLabel(element: HTMLElement): string {
+    if (!element) return '';
+
+    if (element.id) {
+      return `#${element.id}`;
+    }
+
+    const className = Array.from(element.classList)
+      .find((name) => !name.startsWith('mcp-pointer__'));
+
+    if (className) {
+      return `.${className}`;
+    }
+
+    return element.tagName.toLowerCase();
   }
 }

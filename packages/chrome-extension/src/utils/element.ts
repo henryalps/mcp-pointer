@@ -928,6 +928,7 @@ export function adaptTargetToElement(element: HTMLElement, selectionIndex: numbe
     id: element.id || undefined,
     classes: getElementClasses(element),
     innerText: element.innerText || element.textContent || '',
+    outerHTML: element.outerHTML,
     attributes: getElementAttributes(element),
     position: getElementPosition(element),
     cssProperties,

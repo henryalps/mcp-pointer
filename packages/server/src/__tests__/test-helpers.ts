@@ -32,6 +32,7 @@ export function createMockElement(): TargetedElement {
     id: 'test-id',
     classes: ['test-class'],
     innerText: 'Test Element',
+    outerHTML: '<div id="test-id" class="test-class">Test Element</div>',
     attributes: { 'data-test': 'true' },
     position: {
       x: 100, y: 200, width: 300, height: 50,
