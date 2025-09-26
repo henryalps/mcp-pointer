@@ -33,17 +33,10 @@ export function createMockElement(): TargetedElement {
     classes: ['test-class'],
     innerText: 'Test Element',
     outerHTML: '<div id="test-id" class="test-class">Test Element</div>',
-    attributes: { 'data-test': 'true' },
     position: {
       x: 100, y: 200, width: 300, height: 50,
     },
-    cssProperties: {
-      display: 'block',
-      position: 'relative',
-      fontSize: '16px',
-      color: 'rgb(0, 0, 0)',
-      backgroundColor: 'rgb(255, 255, 255)',
-    },
+    allCss: ['.test-class { display: block; }'],
     timestamp: Date.now(),
     url: 'https://example.com',
     tabId: 123,

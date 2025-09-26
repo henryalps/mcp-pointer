@@ -20,7 +20,7 @@ The extension lets you visually select DOM elements in the browser, and the MCP 
 ## ✨ Features
 
 - 🎯 **`Option+Click` Selection** - Simply hold `Option` (Alt on Windows) and click any element
-- 📋 **Complete Element Data** - Text content, CSS classes, HTML attributes, positioning, and styling
+- 📋 **Complete Element Data** - Text content, CSS classes, positioning, and aggregated CSS rules for the selected subtree
 - ⚛️ **React Component Detection** - Component names and source files via Fiber (experimental)
 - 🔗 **WebSocket Connection** - Real-time communication between browser and AI tools
 - 🤖 **MCP Compatible** - Works with Claude Code and other MCP-enabled AI tools
@@ -142,9 +142,8 @@ Your AI tool will automatically start the MCP server when needed using the `npx 
 ## 🎨 Element Data Extracted
 
 - **Basic Info**: Tag name, ID, classes, text content
-- **CSS Properties**: Display, position, colors, dimensions
+- **CSS 规则**: 原始 CSS 文本，覆盖选中元素及其子元素的所有类选择器
 - **Component Info**: React component names and source files (experimental)  
-- **Attributes**: All HTML attributes
 - **Position**: Exact coordinates and dimensions
 - **Source Hints**: File paths and component origins
 

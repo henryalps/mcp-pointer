@@ -37,9 +37,8 @@ describe('SharedStateService', () => {
     expect(loadedElement!.id).toBe(mockElement.id);
     expect(loadedElement!.classes).toEqual(mockElement.classes);
     expect(loadedElement!.innerText).toBe(mockElement.innerText);
-    expect(loadedElement!.attributes).toEqual(mockElement.attributes);
     expect(loadedElement!.position).toEqual(mockElement.position);
-    expect(loadedElement!.cssProperties).toEqual(mockElement.cssProperties);
+    expect(loadedElement!.allCss).toEqual(mockElement.allCss);
     expect(loadedElement!.url).toBe(mockElement.url);
     expect(loadedElement!.tabId).toBe(mockElement.tabId);
   });

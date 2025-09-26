@@ -1,4 +1,4 @@
-import type { ComponentInfo, ElementPosition, CSSProperties } from './element';
+import type { ComponentInfo, ElementPosition } from './element';
 
 export interface TargetedElement {
   idx: number;
@@ -8,9 +8,8 @@ export interface TargetedElement {
   classes: string[];
   innerText: string;
   outerHTML: string;
-  attributes: Record<string, string>;
   position: ElementPosition;
-  cssProperties: CSSProperties;
+  allCss: string[];
   componentInfo?: ComponentInfo;
   timestamp: number;
   url: string;
